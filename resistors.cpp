@@ -7,12 +7,15 @@
 
 using namespace std;
 
-void writeFile(ofstream &outFile, string &partNumber);
+void writeFile(ofstream &outFile, uint16_t value, int pow, string &precision, string &footprint);
 
 string generatePartNumberString(uint16_t value, int pow, string &precision, string &footprint);
 
+string getUnitString(int pow);
+
+void outputResistorsInfo(const uint16_t *code, string &footprint);
+
 int main() {
-    printf("EIA-96:\n");
     uint16_t code[] =
             {100, 102, 105, 107, 110, 113, 115, 118, 121, 124, 127, 130, \
             133, 137, 140, 143, 147, 150, 154, 158, 162, 165, 169, 174, \
@@ -22,91 +25,79 @@ int main() {
             422, 432, 442, 453, 464, 475, 487, 499, 511, 523, 536, 549, \
             562, 576, 590, 604, 619, 634, 649, 665, 681, 698, 715, 732, \
             750, 768, 787, 806, 825, 845, 866, 887, 909, 931, 953, 976};
-    string footprint = "0805";
-    char partNumber[100] = {0};
-//             string description = footprint;
-//             string value;
-    string precision = "±1%";
+    string footprint[4] = {"0402","0603","0805","1206"};
+    for (int i = 0; i < 4; ++i) {
+        outputResistorsInfo(code, footprint[i]);
+    }
+
+    return 0;
+}
+
+void outputResistorsInfo(const uint16_t *code, string &footprint) {
+    string precision = "±0.1%";
     ofstream outFile;
     string fileName = footprint;
-    fileName += ".csv";
+    fileName += "all.csv";
     outFile.open(fileName.c_str(), ios::out);
-//    for (int i = 0; i < 96; ++i) {
-//        memset(partNumber, 0, 100);
-//        if (code[i] % 100 == 0) {
-//            sprintf(partNumber, "RC%sFR-07%dRL", footprint, code[i] / 100);
-//        } else {
-//            if (code[i] % 10 == 0) {
-//                sprintf(partNumber, "RC%sFR-07%dR%dL", footprint, code[i] / 100, code[i] % 100 / 10);
-//            } else {
-//                sprintf(partNumber, "RC%sFR-07%dR%d%dL", footprint, code[i] / 100, code[i] % 100 / 10, code[i] % 10);
-//            }
-//        }
-//        string tmp = partNumber;
-//        writeFile(outFile, tmp);
-//    }
-//    for (int i = 0; i < 96; ++i) {
-//        memset(partNumber, 0, 100);
-//        if (code[i] % 10 == 0) {
-//            sprintf(partNumber, "RC%sFR-07%dRL", footprint, code[i] / 10);
-//        } else {
-//            sprintf(partNumber, "RC%sFR-07%dR%dL", footprint, code[i]/ 10, code[i] % 10);
-//        }
-//        string tmp = partNumber;
-//        writeFile(outFile, tmp);
-//    }
-//    for (int i = 0; i < 96; ++i) {
-//        memset(partNumber, 0, 100);
-//        sprintf(partNumber, "RC%sFR-07%dRL", footprint, code[i]);
-//        string tmp = partNumber;
-//        writeFile(outFile, tmp);
-//    }
-    for (int i = 0; i < sizeof(code) / sizeof(uint16_t); ++i) {
-        cout << generatePartNumberString(code[i], -2, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], -1, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 0, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 1, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 2, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 3, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 4, precision, footprint) << endl;
-        cout << generatePartNumberString(code[i], 5, precision, footprint) << endl;
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], -2, precision, footprint);
     }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], -1, precision, footprint);
+    }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], 0, precision, footprint);
+    }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], 1, precision, footprint);
+    }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], 2, precision, footprint);
+    }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], 3, precision, footprint);
+    }
+    for (int i = 0; i < 96; ++i) {
+        writeFile(outFile, code[i], 4, precision, footprint);
+    }
+//    for (int i = 0; i < 96; ++i) {
+//        writeFile(outFile, code[i], 5, precision, footprint);
+//    }
+
     outFile.close();
-    return 0;
 }
 
 string convertResString(uint16_t value, int pow) {
     string str = to_string(value);
     switch (pow) {
         case -2:
-            str.insert(1,"R");
+            str.insert(1, "R");
             break;
         case -1:
-            str.insert(2,"R");
+            str.insert(2, "R");
             break;
         case 0:
-            str.insert(3,"R");
+            str.insert(3, "R");
             break;
         case 1:
-            str.insert(1,"K");
+            str.insert(1, "K");
             break;
         case 2:
-            str.insert(2,"K");
+            str.insert(2, "K");
             break;
         case 3:
-            str.insert(3,"K");
+            str.insert(3, "K");
             break;
         case 4:
-            str.insert(1,"M");
+            str.insert(1, "M");
             break;
         case 5:
-            str.insert(2,"M");
+            str.insert(2, "M");
             break;
     }
 
-    while (str[str.length() - 1] == '0')
-    {
-        str.erase(str.length() -1);
+    while (str[str.length() - 1] == '0') {
+        str.erase(str.length() - 1);
     }
     return str;
 }
@@ -128,49 +119,87 @@ string generatePartNumberString(uint16_t value, int pow, string &precision, stri
     return ret;
 }
 
-void writeFile(ofstream &outFile, string &partNumber) {
-//    cout << partNumber.substr(6,1);
-    string footprint = partNumber.substr(2, 4);
-    string precision = partNumber.substr(6, 1);
-    if (precision == "B") {
-        precision = "±0.1%";
-    } else if (precision == "D") {
-        precision = "±0.5%";
-    } else if (precision == "F") {
-        precision = "±1%";
-    } else if (precision == "J") {
-        precision = "±5%";
+string convertValueString(uint16_t value, int pow) {
+    string valueString = to_string(value);
+    switch (pow) {
+        case -2:
+        case 1:
+        case 4:
+            valueString.insert(1, ".");
+            break;
+        case -1:
+        case 2:
+        case 5:
+            valueString.insert(2, ".");
+            break;
     }
-    string unit = "";
-    string code = "";
-    string value = partNumber.substr(11);
-    value.replace(value.find("L"), 1, "");
-    if (value.find("R") != string::npos) {
-        code = value;
-        value.replace(value.find("R"), 1, ".");
-        while (value.size() != 4) {
-            value.append("0");
-            code.append("0");
-        }
-        if (code.find("R") == 3) {
-            code[3] = '0';
-            value.replace(3, 1, "");
-        }
-        unit = "Ω";
-    } else if (value.find("K") != string::npos) {
-        value.replace(value.find("K"), 1, ".");
-        unit = "KΩ";
-    } else if (value.find("M") != string::npos) {
-        value.replace(value.find("M"), 1, ".");
-        unit = "MΩ";
+    return valueString;
+}
+
+string getCodeString(uint16_t value, int pow) {
+    string codeString = to_string(value);
+    switch (pow) {
+        case -2:
+            codeString.insert(1, "R");
+            break;
+        case -1:
+            codeString.insert(2, "R");
+            break;
+        default:
+            codeString = to_string(value) + to_string(pow);
+            break;
     }
-//    cout << code << " "<<value << unit <<endl;
-    string description = footprint;
-    description = description + " " + value + unit + "(" + code + ")" + precision;
+    return codeString;
+}
+
+void writeFile(ofstream &outFile, uint16_t value, int pow, string &precision, string &footprint) {
+        string type = "C";
+    if (footprint == "1206")
+    {
+        type = "B";
+    }
+        string unit = getUnitString(pow);
+    string valueString = convertValueString(value, pow);
+    string partNumberString = generatePartNumberString(value, pow, precision, footprint);
+    string codeString = getCodeString(value, pow);
+
+    string description = footprint + " " + valueString + unit + "(" + codeString + ")" + precision;
 //    cout << description <<endl;
-    outFile << "Resistor,," << description << "," << description << "," << description << ",";
-    outFile << value << unit << precision << ",'" << footprint << "," << "RES,\\lib\\lib.Schlib,";
-    outFile << "r" << footprint << "," << "\\lib\\r" << footprint << ".pcblib,YAGEO(国巨)," << partNumber;
+    outFile << "Resistor," << type <<",," ;
+    outFile << description << "," << description << "," << description << ",";
+    outFile << valueString << unit << precision << ",'" << footprint << "," << "RES,\\lib\\lib.Schlib,";
+    outFile << "r" << footprint << "," << "\\lib\\r" << footprint << ".pcblib,YAGEO(国巨)," << partNumberString;
     outFile << "\n";
 
+}
+
+string getUnitString(int pow) {
+    string unit;
+    switch (pow) {
+        case -2:
+            unit = "Ω";
+            break;
+        case -1:
+            unit = "Ω";
+            break;
+        case -0:
+            unit = "Ω";
+            break;
+        case 1:
+            unit = "KΩ";
+            break;
+        case 2:
+            unit = "KΩ";
+            break;
+        case 3:
+            unit = "KΩ";
+            break;
+        case 4:
+            unit = "MΩ";
+            break;
+        case 5:
+            unit = "MΩ";
+            break;
+    }
+    return unit;
 }
